@@ -1,0 +1,23 @@
+stages:
+  - test
+  - build
+  - deploy
+
+# For Unit test
+test-job:
+  stage: test
+  script:
+    - npm run test:ci
+
+# For Docker build
+build-job:
+  stage: build
+  script:
+    - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
+    - docker build -t registry.gitlab.com/testing382203/intern:lastest . 
+    - docker push registry.gitlab.com/testing382203/intern:lastest
+
+deploy-job:
+  stage: deploy
+  script:
+    -

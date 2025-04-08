@@ -2,5 +2,4 @@
 node_modules
 coverage/
 README.md
-.gitlab-ci.yml
-dockerfile
+
