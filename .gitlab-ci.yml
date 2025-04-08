@@ -25,7 +25,9 @@ build-job:
 
 image_scan:
   stage: scan
-  image: docker.io/aquasec/trivy:latest
+  image:
+    name: docker.io/aquasec/trivy:latest
+    entrypoint: [""]
   variables:
     GIT_STRATEGY: none
     TRIVY_USERNAME: "$GITLAB_USERNAME"
