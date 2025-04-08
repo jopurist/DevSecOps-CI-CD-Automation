@@ -6,7 +6,9 @@ stages:
 # For Unit test
 test-job:
   stage: test
+  image: node:lts-alpine
   script:
+    - npm ci
     - npm run test:ci
 
 # For Docker build
