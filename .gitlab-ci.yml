@@ -2,6 +2,7 @@ stages:
   - test
   - build
   - deploy
+  - scan
 
 # For Unit test
 test-job:
@@ -21,6 +22,29 @@ build-job:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+
+image_scan:
+  stage: scan
+  image: docker:stable
+  variable:
+    GIT_STRATEGY: none
+    TRIVY_USERNAME: "$GITLAB_USERNAME"
+    TRIVY_PASSWORD: "$PAT_TOKEN"
+    TRIVY_AUTH_URL: "$CI_REGISTRY"
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  script:
+    - trivy --version
+    # update vulnerabilities db
+    - time trivy image --download-db-only
+    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
+        --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+    # Prints full report
+    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
+    # Fail on critical vulnerabilities
+    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
 
 deploy-job:
   stage: deploy
