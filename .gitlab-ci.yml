@@ -19,8 +19,8 @@ build-job:
     - docker:24.0.5-dind
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:lastest . 
-    - docker push registry.gitlab.com/testing382203/intern:lastest
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
 
 deploy-job:
   stage: deploy
