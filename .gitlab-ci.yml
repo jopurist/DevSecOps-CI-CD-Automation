@@ -20,4 +20,4 @@ build-job:
 deploy-job:
   stage: deploy
   script:
-    -
+    - echo "Deploy"
