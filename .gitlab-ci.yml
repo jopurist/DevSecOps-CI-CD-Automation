@@ -26,7 +26,7 @@ build-job:
 image_scan:
   stage: scan
   image: docker:stable
-  variable:
+  variables:
     GIT_STRATEGY: none
     TRIVY_USERNAME: "$GITLAB_USERNAME"
     TRIVY_PASSWORD: "$PAT_TOKEN"
