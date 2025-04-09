@@ -2,6 +2,7 @@ services:
   gitlab-runner:
     image: gitlab/gitlab-runner:alpine
     container_name: gitlab-runner
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/config.toml:/etc/gitlab-runner/config.toml:rw
