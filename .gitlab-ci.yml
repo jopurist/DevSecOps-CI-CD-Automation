@@ -21,7 +21,8 @@ build-job:
   stage: build
   image: docker:24.0.5
   services:
-    - docker:24.0.5-dind
+    - name: docker:24.0.5-dind
+      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
