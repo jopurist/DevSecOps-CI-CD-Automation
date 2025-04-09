@@ -1,3 +1,4 @@
+# Define stages
 stages:
   - test
   - build
@@ -23,13 +24,16 @@ build-job:
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
 
+# For Container Scanning with Trivy
 image_scan:
   stage: scan
   image:
     name: docker.io/aquasec/trivy:latest
+    # Entrypoint allows to override the default entrypoint of the image. From "trivy trivy --version" -> To "trivy --version" 
     entrypoint: [""]
   variables:
     GIT_STRATEGY: none
+    # Gitlab registry login
     TRIVY_USERNAME: "$GITLAB_USERNAME"
     TRIVY_PASSWORD: "$PAT_TOKEN"
     TRIVY_AUTH_URL: "$CI_REGISTRY"
