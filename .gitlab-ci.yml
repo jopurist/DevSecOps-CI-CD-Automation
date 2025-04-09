@@ -12,6 +12,9 @@ test-job:
   script:
     - npm ci
     - npm run test:ci
+  # Tags are used to select the runner that will execute the job
+  tags:
+    - Project_Runner
 
 # For Docker build
 build-job:
@@ -23,6 +26,8 @@ build-job:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+  tags:
+    - Project_Runner
 
 # For Container Scanning with Trivy
 image_scan:
@@ -51,8 +56,12 @@ image_scan:
     - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
     # Fail on critical vulnerabilities
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  tags:
+    - Project_Runner
 
 deploy-job:
   stage: deploy
   script:
     - echo "Deploy"
+  tags:
+    - Project_Runner
