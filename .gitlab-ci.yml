@@ -98,6 +98,7 @@ sonarscanner-job:
   script: 
     #- sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN}"
     - sonar-scanner
+      -Dsonar.projectKey=Intern-Project
       -Dsonar.sources=.
       -Dsonar.host.url="${SONAR_HOST_URL}"
       -Dsonar.login="${SONAR_TOKEN}"
