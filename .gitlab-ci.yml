@@ -1,18 +1,22 @@
 # Define stages
 stages:
-  - test
+  - test-code
   - build
   - scan
+  - test-sonar
   - sonar
 
 # For Unit test
 test-job:
-  stage: test
+  stage: test-code
   image: node:lts-alpine
   script:
     - npm ci
     - npm run test:ci
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
   # Tags are used to select the runner that will execute the job
+  # In this case it is a self-hosted runner with the tag "Project_Runner"
   tags:
     - Project_Runner
 
@@ -27,6 +31,8 @@ build-job:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
   tags:
     - Project_Runner
 
@@ -57,8 +63,23 @@ image_scan:
     - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
     # Fail on critical vulnerabilities
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
   tags:
     - Project_Runner
+
+
+check-sonarqube:
+  stage: test-sonar
+  tags:
+    - Project_Runner
+  image: alpine
+  script:
+    - apk add --no-cache curl
+    - echo "Pinging SonarQube at ${SONAR_HOST_URL}"
+    - curl -I "${SONAR_HOST_URL}"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /.*test sonar.*/
 
 sonarscanner-job:
   stage: sonar
@@ -78,8 +99,6 @@ sonarscanner-job:
     - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
   allow_failure: true
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'main'
-    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
   tags:
     - Project_Runner
