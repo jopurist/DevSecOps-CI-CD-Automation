@@ -97,10 +97,10 @@ sonarscanner-job:
       - sonar-scanner/   
   script: 
     #- sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN}"
-    - sonar-scanner \
-      -Dsonar.sources=. \
-      -Dsonar.host.url="${SONAR_HOST_URL}" \
-      -Dsonar.login="${SONAR_TOKEN}"  
+    - sonar-scanner
+      -Dsonar.sources=.
+      -Dsonar.host.url="${SONAR_HOST_URL}"
+      -Dsonar.login="${SONAR_TOKEN}"
   allow_failure: true
   rules:
     - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
