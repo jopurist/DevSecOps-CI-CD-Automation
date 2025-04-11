@@ -102,3 +102,4 @@ sonarscanner-job:
     - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
   tags:
     - Project_Runner
+    
