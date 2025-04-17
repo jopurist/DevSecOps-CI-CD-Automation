@@ -47,6 +47,14 @@ Tests the connectivity between the runner and the SonarQube server.
 
 - **Image**: `alpine`
 - **Trigger**: Commit message must include `test sonar`
+- **SetUp**:
+  - Start the SonarQube Docker container: 
+    docker run -d --name sonarqube SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:latest
+  - Access the SonarQube UI via `http://localhost:9000`
+  - Login with default credentials Username='admin' and Password='admin'
+  - Change the Password
+  - Create a Local Project & Generate a new SONAR_TOKEN
+  - Go to GitLab Variables and create two new variables named $SONAR_HOST_URL & $SONAR_TOKEN
 - **Script**:
   - Install `curl`
   - Ping the SonarQube server using the configured URL
