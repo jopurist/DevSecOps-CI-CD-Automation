@@ -68,7 +68,7 @@ image_scan:
   tags:
     - Project_Runner
 
-
+# For Checking SonarQube connection
 check-sonarqube:
   stage: test-sonar
   tags:
@@ -81,6 +81,7 @@ check-sonarqube:
   rules:
     - if: $CI_COMMIT_MESSAGE =~ /.*test sonar.*/
 
+# For Code Scanning with SonarQube
 sonarscanner-job:
   stage: sonar
   image:
