@@ -110,5 +110,6 @@ Make sure the following are configured as CI/CD variables in your GitLab project
 ## 🧾 Example Commit Message
 
 To trigger the full pipeline, use a message like:
+
 - `git commit -m "run all"`
 - `git commit -m "test sonar"`
