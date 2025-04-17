@@ -55,6 +55,7 @@ Tests the connectivity between the runner and the SonarQube server.
   - Change the Password
   - Create a Local Project & Generate a new SONAR_TOKEN
   - Go to GitLab Variables and create two new variables named $SONAR_HOST_URL & $SONAR_TOKEN
+  - Test the connection via `git commit -m "test sonar"`
 - **Script**:
   - Install `curl`
   - Ping the SonarQube server using the configured URL
