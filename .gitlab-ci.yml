@@ -1,10 +1,10 @@
 # Define stages
 stages:
   - test-code
-  - build
-  - scan
   - test-sonar
   - sonar
+  - build
+  - scan
 
 # For Unit test
 test-job:
@@ -13,58 +13,19 @@ test-job:
   script:
     - npm ci
     - npm run test:ci
+  artifacts:
+    when: always
+    paths:
+      - /.*coverage/junit.xml
+    reports:
+      junit: junit.xml
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
+    # Run on main and dev branches, i.e. fix(api): fix wrong calculation of request body checksum
+    - if: '$CI_COMMIT_BRANCH =~ /^main|dev$/ && 
+        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/'
+
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
-  tags:
-    - Project_Runner
-
-# For Docker build
-build-job:
-  stage: build
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
-  script:
-    - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
-    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
-  tags:
-    - Project_Runner
-
-# For Container Scanning with Trivy
-image_scan:
-  stage: scan
-  image:
-    name: docker.io/aquasec/trivy:latest
-    # Entrypoint allows to override the default entrypoint of the image. From "trivy trivy --version" -> To "trivy --version" 
-    entrypoint: [""]
-  variables:
-    GIT_STRATEGY: none
-    # Gitlab registry login
-    TRIVY_USERNAME: "$GITLAB_USERNAME"
-    TRIVY_PASSWORD: "$PAT_TOKEN"
-    TRIVY_AUTH_URL: "$CI_REGISTRY"
-    TRIVY_NO_PROGRESS: "true"
-    TRIVY_CACHE_DIR: ".trivycache/"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-  script:
-    - trivy --version
-    # update vulnerabilities db
-    - time trivy image --download-db-only
-    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
-    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
-        --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
-    # Prints full report
-    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
-    # Fail on critical vulnerabilities
-    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
   tags:
     - Project_Runner
 
@@ -106,6 +67,57 @@ sonarscanner-job:
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
+  - if: '$CI_COMMIT_BRANCH == "main" && 
+      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf)(\(.+\))?:\s.+/'
+  tags:
+    - Project_Runner
+
+# For Docker build
+build-job:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - name: docker:24.0.5-dind
+      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
+  script:
+    - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && 
+        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/'
+  tags:
+    - Project_Runner
+
+# For Container Scanning with Trivy
+image_scan:
+  stage: scan
+  image:
+    name: docker.io/aquasec/trivy:latest
+    # Entrypoint allows to override the default entrypoint of the image. From "trivy trivy --version" -> To "trivy --version" 
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+    # Gitlab registry login
+    TRIVY_USERNAME: "$GITLAB_USERNAME"
+    TRIVY_PASSWORD: "$PAT_TOKEN"
+    TRIVY_AUTH_URL: "$CI_REGISTRY"
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  script:
+    - trivy --version
+    # update vulnerabilities db
+    - time trivy image --download-db-only
+    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
+        --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+    # Prints full report
+    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
+    # Fail on critical vulnerabilities
+    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "main" && 
+      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/' 
   tags:
     - Project_Runner
