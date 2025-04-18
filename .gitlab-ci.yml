@@ -1,10 +1,10 @@
 # Define stages
 stages:
   - test-code
-  - build
-  - scan
   - test-sonar
   - sonar
+  - build
+  - scan
 
 # For Unit test
 test-job:
@@ -13,10 +13,62 @@ test-job:
   script:
     - npm ci
     - npm run test:ci
+  artifacts:
+    when: always
+    paths:
+      - /.*coverage/junit.xml
+    reports:
+      junit: junit.xml
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
+    # Run on main and dev branches, i.e. fix(api): fix wrong calculation of request body checksum
+    - if: '$CI_COMMIT_BRANCH =~ /^main|dev$/ || 
+        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/'
+
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
+  tags:
+    - Project_Runner
+
+# For Checking SonarQube connection
+check-sonarqube:
+  stage: test-sonar
+  tags:
+    - Project_Runner
+  image: alpine
+  script:
+    - apk add --no-cache curl
+    - echo "Pinging SonarQube at ${SONAR_HOST_URL}"
+    - curl -I "${SONAR_HOST_URL}"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /.*test sonar connection.*/
+
+# For Code Scanning with SonarQube
+sonarscanner-job:
+  stage: sonar
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    policy: pull-push
+    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
+    paths:
+      - "${SONAR_USER_HOME}/cache"
+      - sonar-scanner/   
+  script:
+    - sonar-scanner
+      -Dsonar.projectKey=Intern-Project
+      -Dsonar.sources=.
+      -Dsonar.host.url="${SONAR_HOST_URL}"
+      -Dsonar.token="${SONAR_TOKEN}"
+      -Dsonar.qualitygate.wait=true
+      -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
+  allow_failure: true
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "main" || 
+      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf)(\(.+\))?:\s.+/'
   tags:
     - Project_Runner
 
@@ -32,7 +84,8 @@ build-job:
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
+    - if: '$CI_COMMIT_BRANCH == "main" || 
+        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/'
   tags:
     - Project_Runner
 
@@ -64,47 +117,7 @@ image_scan:
     # Fail on critical vulnerabilities
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/  
-  tags:
-    - Project_Runner
-
-
-check-sonarqube:
-  stage: test-sonar
-  tags:
-    - Project_Runner
-  image: alpine
-  script:
-    - apk add --no-cache curl
-    - echo "Pinging SonarQube at ${SONAR_HOST_URL}"
-    - curl -I "${SONAR_HOST_URL}"
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*test sonar.*/
-
-sonarscanner-job:
-  stage: sonar
-  image:
-    name: sonarsource/sonar-scanner-cli:11
-    entrypoint: [""]
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
-  cache:
-    policy: pull-push
-    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
-    paths:
-      - "${SONAR_USER_HOME}/cache"
-      - sonar-scanner/   
-  script:
-    - sonar-scanner
-      -Dsonar.projectKey=Intern-Project
-      -Dsonar.sources=.
-      -Dsonar.host.url="${SONAR_HOST_URL}"
-      -Dsonar.token="${SONAR_TOKEN}"
-      -Dsonar.qualitygate.wait=true
-      -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
-  allow_failure: true
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*run all.*/
+  - if: '$CI_COMMIT_BRANCH == "main" || 
+      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/' 
   tags:
     - Project_Runner

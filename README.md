@@ -1,93 +1,131 @@
-# Intern
+# 🚀 GitLab CI/CD Pipeline for Intern Project
 
+This repository contains a GitLab CI/CD pipeline configured to handle:
 
+1. **Unit Testing**
+2. **SonarQube Connection Testing**
+3. **Code Quality Scanning with SonarQube**
+4. **Docker Image Build & Push**
+5. **Container Vulnerability Scanning with Trivy**
 
-## Getting started
+> ✅ The pipeline is triggered using **conventional commit messages** (e.g., `feat:`, `fix:`, `refactor:`, etc.) and optimized to run different jobs based on **branch names and commit types**.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## 🛠️ Pipeline Stages Overview
 
-## Add your files
+### 🔍 1. Test Code (`test-code`)
+Runs unit tests using Node.js.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- **Image**: `node:lts-alpine`
+- **Trigger**: On `dev` or `main` branch when using valid conventional commits
+- **Script**:
+  - Install dependencies (`npm ci`)
+  - Run tests (`npm run test:ci`)
+- **Artifacts**: Outputs `junit.xml` for test reporting
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/testing382203/intern.git
-git branch -M main
-git push -uf origin main
-```
+---
 
-## Integrate with your tools
+### 🌐 2. Test SonarQube Connection (`test-sonar`)
+Tests the connectivity between the GitLab runner and the SonarQube server.
 
-- [ ] [Set up project integrations](https://gitlab.com/testing382203/intern/-/settings/integrations)
+- **Image**: `alpine`
+- **Trigger**: Only when the commit message starts with `test: sonar`
+- **Setup**:
+  - Run SonarQube locally with:  
+    ```bash
+    docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
+    ```
+  - Access the UI via `http://localhost:9000`
+  - Login using default credentials `admin` / `admin`
+  - Generate a new token
+  - Set `$SONAR_HOST_URL` and `$SONAR_TOKEN` in GitLab CI/CD Variables
+- **Script**:
+  - Use `curl` to ping the SonarQube server
 
-## Collaborate with your team
+---
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 🧹 3. SonarQube Scan (`sonar`)
+Performs static code analysis using SonarQube and enforces quality gates.
 
-## Test and Deploy
+- **Image**: `sonarsource/sonar-scanner-cli:11`
+- **Trigger**: Only on `main` branch with relevant commit types (e.g., `feat:`, `fix:`, `refactor:`)
+- **Script**:
+  - Scan the source code
+  - Wait for quality gate results before proceeding
+- **Versioning**: Uses the short SHA as the project version (`sonar.projectVersion`)
 
-Use the built-in continuous integration in GitLab.
+---
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### 🐳 4. Build Docker Image (`build`)
+Builds and pushes a Docker image tagged with the commit SHA.
 
-***
+- **Image**: `docker:24.0.5` with `docker:dind`
+- **Trigger**: On `dev` and `main` branches with conventional commits
+- **Script**:
+  - Authenticate with GitLab Registry
+  - Build and push the Docker image
 
-# Editing this README
+---
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### 🛡️ 5. Image Scanning (`scan`)
+Uses [Trivy](https://github.com/aquasecurity/trivy) to scan the Docker image for vulnerabilities.
 
-## Suggestions for a good README
+- **Image**: `aquasec/trivy:latest`
+- **Trigger**: On `main` and `dev` branches with valid commit types
+- **Script**:
+  - Download latest vulnerability DB
+  - Generate scan report
+  - Fail the pipeline if critical vulnerabilities are found
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+## 🧪 Quality Gate Enforcement
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+The **SonarQube scan** waits for a quality gate decision before proceeding. This ensures:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+- Code meets quality standards
+- No new bugs, code smells, or vulnerabilities are introduced
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## 🎯 Branch Strategy
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+| Branch | Behavior                                |
+|--------|-----------------------------------------|
+| `main` | Runs full pipeline including SonarQube  |
+| `dev`  | Skips SonarQube analysis for speed      |
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+---
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## ✅ Conventional Commit Examples
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+| Type       | Description                          | Example                                  |
+|------------|--------------------------------------|------------------------------------------|
+| `feat:`    | New feature                          | `feat(api): add endpoint for login`      |
+| `fix:`     | Bug fix                              | `fix(ui): correct login form validation` |
+| `refactor:`| Code restructure                     | `refactor(core): optimize loop logic`    |
+| `perf:`    | Performance improvements             | `perf(api): improve response time`       |
+| `build:`   | CI/CD, packaging-related changes     | `build(ci): update Docker build logic`   |
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+> 💡 Only these types will trigger the pipeline.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+---
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## 🏷️ Runner Tag
 
-## License
-For open source projects, say how it is licensed.
+All jobs use the runner tag: `Project_Runner`  
+Make sure your GitLab Runner is configured with this tag.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+---
+
+## 🔐 Required CI/CD Environment Variables
+
+Add these to your GitLab project settings under **CI/CD > Variables**:
+
+- `GITLAB_USERNAME`
+- `PAT_TOKEN`
+- `SONAR_HOST_URL`
+- `SONAR_TOKEN`
+
+---
