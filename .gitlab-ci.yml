@@ -121,3 +121,4 @@ image_scan:
   - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/
   tags:
     - Project_Runner
+
