@@ -23,7 +23,6 @@ test-job:
   rules:
     # Run on main and dev branches, i.e. fix(api): fix wrong calculation of request body checksum
     - if: $CI_COMMIT_BRANCH =~ /^main|dev$/ 
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
   # Tags are used to select the runner that will execute the job
@@ -70,7 +69,6 @@ sonarscanner-job:
   allow_failure: true
   rules:
   - if: $CI_COMMIT_BRANCH == "main"
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf)(\(.+\))?:\s.+/
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
@@ -84,11 +82,11 @@ build-job-non-prod:
       command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
-    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
     - if: $CI_COMMIT_BRANCH == "dev"
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
+    - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like dev-v1.0.0
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
@@ -102,11 +100,11 @@ build-job-prd:
       command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
-    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
+    - if: $CI_COMMIT_BRANCH == "main" 
+    - if: $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like prd-v1.0.0
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
@@ -140,7 +138,6 @@ image_scan:
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
   rules:
   - if: $CI_COMMIT_BRANCH == "main"
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
