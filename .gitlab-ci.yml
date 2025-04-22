@@ -21,8 +21,8 @@ test-job:
       junit: junit.xml
   rules:
     # Run on main and dev branches, i.e. fix(api): fix wrong calculation of request body checksum
-    - if: '$CI_COMMIT_BRANCH =~ /^main|dev$/ || 
-        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/'
+    - if: $CI_COMMIT_BRANCH =~ /^main|dev$/ && 
+        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/
 
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
@@ -67,8 +67,8 @@ sonarscanner-job:
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
   allow_failure: true
   rules:
-  - if: '$CI_COMMIT_BRANCH == "main" || 
-      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf)(\(.+\))?:\s.+/'
+  - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG
+  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf)(\(.+\))?:\s.+/
   tags:
     - Project_Runner
 
@@ -84,8 +84,9 @@ build-job:
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || 
-        $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/'
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG == "latest"
+    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/
   tags:
     - Project_Runner
 
@@ -116,8 +117,12 @@ image_scan:
     - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
     # Fail on critical vulnerabilities
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-report.json
   rules:
-  - if: '$CI_COMMIT_BRANCH == "main" || 
-      $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/' 
+  - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG
+  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/
   tags:
     - Project_Runner
+
