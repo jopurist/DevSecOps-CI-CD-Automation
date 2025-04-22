@@ -12,6 +12,15 @@ This repository contains a GitLab CI/CD pipeline configured to handle:
 
 ---
 
+## Requirements
+
+1. **GitLab**
+2. **DOcker Desktop**
+3. **Trivy**
+4. **SonarQube**
+
+---
+
 ## 🛠️ Pipeline Stages Overview
 
 ### 🔍 1. Test Code (`test-code`)
