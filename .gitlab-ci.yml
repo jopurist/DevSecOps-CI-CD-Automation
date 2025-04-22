@@ -73,7 +73,7 @@ sonarscanner-job:
   tags:
     - Project_Runner
 
-# For Docker build
+# For Docker Non-Production build
 build-job-non-prod:
   stage: build-non-prod
   image: docker:24.0.5
@@ -86,11 +86,11 @@ build-job-non-prod:
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
     - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like dev-v1.0.0
-    # - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
   tags:
     - Project_Runner
 
-# For Docker build
+# For Docker Production build
 build-job-prd:
   stage: build-prd
   image: docker:24.0.5
@@ -102,8 +102,8 @@ build-job-prd:
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like prd-v1.0.0
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "dev"
   tags:
     - Project_Runner
 
