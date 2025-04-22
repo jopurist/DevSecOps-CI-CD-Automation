@@ -69,7 +69,7 @@ sonarscanner-job:
   allow_failure: true
   rules:
   - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf)(\(.+\))?:\s.+/
+  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf)(\(.+\))?:\s.+/
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
@@ -87,7 +87,7 @@ build-job:
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
   rules:
     - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/
+    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
@@ -124,7 +124,7 @@ image_scan:
       container_scanning: gl-container-scanning-report.json
   rules:
   - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|build)(\(.+\))?:\s.+/
+  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
