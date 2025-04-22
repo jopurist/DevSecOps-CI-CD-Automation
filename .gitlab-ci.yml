@@ -139,4 +139,3 @@ image_scan:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
-
