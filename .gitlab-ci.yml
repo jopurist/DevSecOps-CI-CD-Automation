@@ -17,9 +17,9 @@ test-job:
   artifacts:
     when: always
     paths:
-      - /.*coverage/junit.xml
+      - coverage/junit.xml
     reports:
-      junit: junit.xml
+      junit: coverage/junit.xml
   rules:
     # Run on main and dev branches
     - if: $CI_COMMIT_BRANCH == "dev" 
