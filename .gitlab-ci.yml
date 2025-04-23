@@ -22,8 +22,6 @@ test-job:
   rules:
     # Run on main and dev branches
     - if: $CI_COMMIT_BRANCH == "dev" 
-    # - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
   tags:
@@ -52,46 +50,38 @@ sonarscanner-job:
       -Dsonar.token="${SONAR_TOKEN}"
       -Dsonar.qualitygate.wait=true
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
-  allow_failure: true
   rules:
-  # - if: $CI_COMMIT_BRANCH == "main"
   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
   tags:
     - Project_Runner
 
-# For Docker Non-Production build
-build-job-non-prod:
-  stage: build-non-prod
+# Template for Docker Builds
+.docker-build:
   image: docker:24.0.5
   services:
     - name: docker:24.0.5-dind
       command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG .
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like dev-v1.0.0
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
   tags:
     - Project_Runner
 
-# For Docker Production build
+# Non-Production Docker Build
+build-job-non-prod:
+  extends: .docker-build
+  stage: build-non-prod
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+
+# Production Docker Build
 build-job-prd:
+  extends: .docker-build
   stage: build-prd
-  image: docker:24.0.5
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
-  script:
-    - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
-    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
     - if: $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/
-    # - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "dev"
-  tags:
-    - Project_Runner
 
 # For Container Scanning with Trivy
 image_scan:
