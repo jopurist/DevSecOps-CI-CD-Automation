@@ -22,8 +22,8 @@ test-job:
       junit: junit.xml
   rules:
     # Run on main and dev branches
-    - if: $CI_COMMIT_BRANCH =~ /^main|dev$/ 
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "dev" 
+    # - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
@@ -68,8 +68,8 @@ sonarscanner-job:
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
   allow_failure: true
   rules:
-  - if: $CI_COMMIT_BRANCH == "main"
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  # - if: $CI_COMMIT_BRANCH == "main"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
   tags:
     - Project_Runner
 
