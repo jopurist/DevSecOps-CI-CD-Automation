@@ -3,7 +3,8 @@ stages:
   - test-code
   - test-sonar
   - sonar
-  - build
+  - build-non-prod
+  - build-prd
   - scan
 
 # For Unit test
@@ -20,9 +21,8 @@ test-job:
     reports:
       junit: junit.xml
   rules:
-    # Run on main and dev branches, i.e. fix(api): fix wrong calculation of request body checksum
+    # Run on main and dev branches
     - if: $CI_COMMIT_BRANCH =~ /^main|dev$/ 
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|perf|test|chore)(\(.+\))?:\s.+/
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
   # Tags are used to select the runner that will execute the job
@@ -68,27 +68,42 @@ sonarscanner-job:
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
   allow_failure: true
   rules:
-  - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf)(\(.+\))?:\s.+/
+  - if: $CI_COMMIT_BRANCH == "main"
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
 
-# For Docker build
-build-job:
-  stage: build
+# For Docker Non-Production build
+build-job-non-prod:
+  stage: build-non-prod
   image: docker:24.0.5
   services:
     - name: docker:24.0.5-dind
       command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
   script:
     - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
-    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA . 
-    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_SHORT_SHA
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-    - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/ # Create tag first, Only run on main branch and version tags like dev-v1.0.0
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+  tags:
+    - Project_Runner
+
+# For Docker Production build
+build-job-prd:
+  stage: build-prd
+  image: docker:24.0.5
+  services:
+    - name: docker:24.0.5-dind
+      command: ["--host=tcp://0.0.0.0:2375", "--tls=false"]
+  script:
+    - docker login registry.gitlab.com -u $GITLAB_USERNAME -p $PAT_TOKEN
+    - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG . 
+    - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/
+    # - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "dev"
   tags:
     - Project_Runner
 
@@ -119,13 +134,9 @@ image_scan:
     - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
     # Fail on critical vulnerabilities
     - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
-  artifacts:
-    reports:
-      container_scanning: gl-container-scanning-report.json
   rules:
-  - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG 
-  - if: $CI_COMMIT_MESSAGE =~ /^(feat|fix|refactor|test|perf|build)(\(.+\))?:\s.+/
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/
+  # - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
     - Project_Runner
 
