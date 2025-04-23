@@ -5,7 +5,7 @@ import readyz from './src/readyz.js';
 import request from './src/request.js';
 
 const app = express();
-// app.disable('x-powered-by');
+app.disable('x-powered-by');
 const port = process.env.PORT || 8080;
 
 app.use('/healthz', healthz);
