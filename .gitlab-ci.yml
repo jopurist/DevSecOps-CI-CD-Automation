@@ -1,15 +1,14 @@
 # Define stages
 stages:
-  - test-code
-  - test-sonar
-  - sonar
+  - unit-test
+  - sonar-scan
   - build-non-prod
   - build-prd
-  - scan
+  - image-scan
 
 # For Unit test
 test-job:
-  stage: test-code
+  stage: unit-test
   image: node:lts-alpine
   script:
     - npm ci
@@ -30,22 +29,9 @@ test-job:
   tags:
     - Project_Runner
 
-# For Checking SonarQube connection
-check-sonarqube:
-  stage: test-sonar
-  tags:
-    - Project_Runner
-  image: alpine
-  script:
-    - apk add --no-cache curl
-    - echo "Pinging SonarQube at ${SONAR_HOST_URL}"
-    - curl -I "${SONAR_HOST_URL}"
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /.*test sonar connection.*/
-
 # For Code Scanning with SonarQube
 sonarscanner-job:
-  stage: sonar
+  stage: sonar-scan
   image:
     name: sonarsource/sonar-scanner-cli:11
     entrypoint: [""]
@@ -109,7 +95,7 @@ build-job-prd:
 
 # For Container Scanning with Trivy
 image_scan:
-  stage: scan
+  stage: image-scan
   image:
     name: docker.io/aquasec/trivy:latest
     # Entrypoint allows to override the default entrypoint of the image. From "trivy trivy --version" -> To "trivy --version" 
@@ -122,7 +108,7 @@ image_scan:
     TRIVY_AUTH_URL: "$CI_REGISTRY"
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   script:
     - trivy --version
     # update vulnerabilities db
