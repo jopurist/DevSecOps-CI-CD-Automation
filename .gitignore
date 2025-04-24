@@ -3,4 +3,7 @@ node_modules
 coverage/
 README.md
 config/
-
+/.terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl

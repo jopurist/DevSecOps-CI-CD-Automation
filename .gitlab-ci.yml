@@ -25,7 +25,7 @@ test-job:
   # Tags are used to select the runner that will execute the job
   # In this case it is a self-hosted runner with the tag "Project_Runner"
   tags:
-    - Project_Runner
+    - VM_runner
 
 # For Code Scanning with SonarQube
 sonarscanner-job:
@@ -66,7 +66,7 @@ sonarscanner-job:
     - docker build -t registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG .
     - docker push registry.gitlab.com/testing382203/intern:$CI_COMMIT_TAG
   tags:
-    - Project_Runner
+    - VM_runner
 
 # Non-Production Docker Build
 build-job-non-prod:
@@ -114,5 +114,6 @@ image_scan:
   - if: $CI_COMMIT_TAG =~ /^prd-v\d+\.\d+\.\d+$/
   # - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   tags:
-    - Project_Runner
+    - VM_runner
+
 
