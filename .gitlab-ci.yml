@@ -52,8 +52,10 @@ sonarscanner-job:
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+  # For testing only
+  - if: $CI_COMMIT_BRANCH == "dev"
   tags:
-    - Project_Runner
+    - VM_runner
 
 # Template for Docker Builds
 .docker-build:
