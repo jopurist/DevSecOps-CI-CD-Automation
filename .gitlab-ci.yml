@@ -46,6 +46,7 @@ sonarscanner-job:
     - sonar-scanner
       -Dsonar.projectKey=Intern-Project
       -Dsonar.sources=.
+      -Dsonar.javascript.node.maxspace=512
       -Dsonar.host.url="${SONAR_HOST_URL}"
       -Dsonar.token="${SONAR_TOKEN}"
       -Dsonar.qualitygate.wait=true
