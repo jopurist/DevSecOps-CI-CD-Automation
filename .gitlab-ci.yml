@@ -52,7 +52,9 @@ sonarscanner-job:
       -Dsonar.token="${SONAR_TOKEN}"
       -Dsonar.qualitygate.wait=true
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
-      -Dsonar.inclusions=test/**/*
+      -Dsonar.inclusions=src/**/*,test/**/*,package.json \
+      -Dsonar.exclusions=coverage/**,node_modules/**,build/**,dist/** \
+      -Dsonar.javascript.node.maxspace=256
  
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
