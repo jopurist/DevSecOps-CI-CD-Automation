@@ -42,8 +42,8 @@ sonarscanner-job:
     paths:
       - "${SONAR_USER_HOME}/cache"
       - sonar-scanner/   
-  before_script:
-  - export SONAR_SCANNER_OPTS="-Xmx512m"
+  # before_script:
+  # - export SONAR_SCANNER_OPTS="-Xmx512m"
   script:
     - sonar-scanner
       -Dsonar.projectKey=Intern-Project
