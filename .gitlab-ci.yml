@@ -60,7 +60,7 @@ sonarscanner-job:
   # For testing only
   - if: $CI_COMMIT_BRANCH == "dev"
   tags:
-    - VM_runner
+    - Project_Runner
 
 # Template for Docker Builds
 .docker-build:
