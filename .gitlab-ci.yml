@@ -42,6 +42,8 @@ sonarscanner-job:
     paths:
       - "${SONAR_USER_HOME}/cache"
       - sonar-scanner/   
+  before_script:
+  - export SONAR_SCANNER_OPTS="-Xmx512m"
   script:
     - sonar-scanner
       -Dsonar.projectKey=Intern-Project
@@ -51,6 +53,7 @@ sonarscanner-job:
       -Dsonar.qualitygate.wait=true
       -Dsonar.projectVersion="${CI_COMMIT_SHORT_SHA}"
       -Dsonar.inclusions=src/**/*,test/**/*,package.json
+      -Dsonar.javascript.node.maxspace=256
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
   # For testing only
