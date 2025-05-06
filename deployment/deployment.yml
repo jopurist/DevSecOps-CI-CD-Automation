@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: python-deployment
+  template:
+    metadata:
+      labels:
+        app: python-deployment
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - python-deployment
+            topologyKey: kubernetes.io/hostname
+
+          # preferredDuringSchedulingIgnoredDuringExecution:
+          # - weight: 1
+          #   podAffinityTerm:
+          #     labelSelector:
+          #       matchExpressions:
+          #       - key: app
+          #         operator: In
+          #         values:
+          #         - python-deployment
+          #     topologyKey: kubernetes.io/hostname
+          
+          # - weight: 50
+          #   podAffinityTerm:
+          #     labelSelector:
+          #       matchExpressions:
+          #       - key: app
+          #         operator: In
+          #         values:
+          #         - python-deployment
+          #     topologyKey: kubernetes.io/hostname
+
+        # podAntiAffinity:
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     podAffinityTerm:
+        #       labelSelector:
+        #         matchExpressions:
+        #           - key: app
+        #             operator: In
+        #             values:
+        #             - python-deployment
+        #       topologyKey: kubernetes.io/hostname
+      containers:
+      - name: python-deployment
+        image: puristj/python_app:v1
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5000
+        env:
+        - name: APP_ENV
+          value: "dev"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-service
+spec:
+  selector:
+    app: python-deployment
+  ports:
+  - port: 80
+    targetPort: 5000
