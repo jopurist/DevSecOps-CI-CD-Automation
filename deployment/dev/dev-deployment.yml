@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-nodejs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dev-nodejs-api
+  template:
+    metadata:
+      labels:
+        app: dev-nodejs-api
+    spec:
+      containers:
+      - name: dev-nodejs-project
+        image: registry.gitlab.com/testing382203/intern:dev-v1.1.1
+        imagePullSecret: imagesecret
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5000
+        env:
+        - name: APP_ENV
+          value: "dev"
+
