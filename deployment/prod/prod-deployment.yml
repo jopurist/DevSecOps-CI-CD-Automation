@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: dev-nodejs-project
-        image: puristj/python_app:v1
+        image: registry.gitlab.com/testing382203/intern:prd-v1.0.4
         resources:
           requests:
             memory: "64Mi"
@@ -27,4 +27,3 @@ spec:
         env:
         - name: APP_ENV
           value: "prod"
-
