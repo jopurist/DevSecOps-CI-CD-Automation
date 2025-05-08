@@ -126,16 +126,24 @@ image_scan:
 
 dev-deployment:
   stage: dev-deploy
-  script:
+  before_script:
     - sudo apt-get update && sudo apt-get install -y curl jq
-    - |
-      NEXT_TAG=$(curl --silent --header "PRIVATE-TOKEN: $PAT_TOKEN" \
-        "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags" \
-        | jq -r '.[] | select(.name | test("^dev-v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' \
-        | sort -V | tail -n 1)
-      echo "Resolved NEXT_TAG=$NEXT_TAG"
-      sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml
+    - git fetch origin "$CI_COMMIT_REF_NAME"
+    - git checkout deployment
+  script:
+    - >
+      NEXT_TAG=$(curl --silent --header "PRIVATE-TOKEN: $PAT_TOKEN"
+      "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags"
+      | jq -r '.[] | select(.name | test("^dev-v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name'| sort -V | tail -n 1) &&
+      echo "Next tag: $NEXT_TAG" &&
+      sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml &&
+      git add deployment/dev/dev-deployment.yml &&
+      git commit -m "ci: update image tag to ${NEXT_TAG}" &&
+      git remote set-url origin https://gitlab-ci-token:${PAT_TOKEN}@gitlab.com/testing382203/intern.git &&
+      git pull --rebase origin "$CI_COMMIT_REF_NAME" &&
+      git push origin $CI_COMMIT_REF_NAME
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "deployment"
   tags:
     - VM_Runner
+    
