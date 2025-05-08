@@ -131,7 +131,7 @@ dev-deployment:
     - |
       NEXT_TAG=$(curl --silent --header "PRIVATE-TOKEN: $PAT_TOKEN" \
         "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags" \
-        | jq -r '.[] | select(.name | test("^prd-v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' \
+        | jq -r '.[] | select(.name | test("^dev-v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' \
         | sort -V | tail -n 1)
       echo "Resolved NEXT_TAG=$NEXT_TAG"
       sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml
