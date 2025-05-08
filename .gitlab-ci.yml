@@ -5,6 +5,8 @@ stages:
   - build-non-prod
   - build-prd
   - image-scan
+  - dev-deploy
+  - prod-deploy
 
 # For Unit test
 test-job:
@@ -122,4 +124,18 @@ image_scan:
   tags:
     - VM_Runner
 
-
+dev-deployment:
+  stage: dev-deploy
+  image: alpine:latest
+  variables:
+    NEXT_TAG=$(curl --silent --header "PRIVATE-TOKEN: $PAT_TOKEN" \
+        "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/repository/tags" \
+        | jq -r '.[] | select(.name | test("^prd-v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name'
+        | sort -V | tail -n 1)
+  script:
+    - "sed -i -E 's|(image: registry.gitlab.com/testing382203/intern:).*|\\1$NEXT_TAG|' dev-deployment:.yaml"
+  rules:
+  # - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/
+  - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "deployment"
+  tags:
+    - VM_Runner
