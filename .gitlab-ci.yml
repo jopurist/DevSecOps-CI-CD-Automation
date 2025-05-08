@@ -135,6 +135,9 @@ dev-deployment:
         | sort -V | tail -n 1)
       echo "Resolved NEXT_TAG=$NEXT_TAG"
       sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml
+    - git add deployment/dev/dev-deployment.yml
+    - git commit -m "deploy: update image tag to ${NEXT_TAG}""
+    - git push origin "$CI_COMMIT_REF_NAME"
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "deployment"
   tags:
