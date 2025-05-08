@@ -140,7 +140,7 @@ dev-deployment:
       sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml &&
       git add deployment/dev/dev-deployment.yml &&
       git commit -m "ci: update image tag to ${NEXT_TAG}" &&
-      git remote set-url origin https://gitlab-ci-token:${PUSH_TOKEN}@gitlab.com/testing382203/intern.git &&
+      git remote set-url origin https://gitlab-ci-token:${PAT_TOKEN}@gitlab.com/testing382203/intern.git &&
       git push origin $CI_COMMIT_REF_NAME
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "deployment"
