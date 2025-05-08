@@ -129,7 +129,7 @@ dev-deployment:
   before_script:
     - sudo apt-get update && sudo apt-get install -y curl jq
     - git fetch origin "$CI_COMMIT_REF_NAME"
-    - git checkout "$CI_COMMIT_REF_NAME"
+    - git checkout deployment
   script:
     - >
       NEXT_TAG=$(curl --silent --header "PRIVATE-TOKEN: $PAT_TOKEN"
@@ -139,9 +139,10 @@ dev-deployment:
       echo "Next tag: $NEXT_TAG" &&
       sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml &&
       git add deployment/dev/dev-deployment.yml &&
-      git commit -m "ci: update image tag to ${NEXT_TAG} &&
-      git push origin "$CI_COMMIT_REF_NAME"
+      git commit -m "ci: update image tag to ${NEXT_TAG}" &&
+      git push origin $CI_COMMIT_REF_NAME
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "deployment"
   tags:
     - VM_Runner
+    
