@@ -131,6 +131,7 @@ dev-deployment:
   before_script:
     - git remote set-url origin https://$GIT_USER:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
     - git checkout deployment
+    - git branch
   script:
     # - NEXT_TAG=$($CI_COMMIT_TAG) 
     - echo Next tag = $CI_COMMIT_TAG 
