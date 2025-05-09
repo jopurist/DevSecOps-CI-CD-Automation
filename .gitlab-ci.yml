@@ -150,7 +150,7 @@ dev-deployment:
 prod-deployment:
   stage: prod-deploy
   dependencies:
-    - image-scan
+    - image_scan
   variables:
     GIT_DEPTH: 0
   before_script:
