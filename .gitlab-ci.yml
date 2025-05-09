@@ -129,7 +129,7 @@ dev-deployment:
   dependencies:
     - build-job-non-prod
   before_script:
-    - git remote set-url origin https://$GITLAB_USERNAME:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
+    - git remote set-url origin https://$GIT_USER:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
     - git checkout deployment
   script:
     # - NEXT_TAG=$($CI_COMMIT_TAG) 
