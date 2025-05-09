@@ -131,14 +131,16 @@ dev-deployment:
   before_script:
     - git checkout deployment
   script:
-    - >
-      NEXT_TAG=$($CI_COMMIT_TAG) &&
-      echo "Next tag: $NEXT_TAG" &&
-      sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml &&
-      git add deployment/dev/dev-deployment.yml &&
-      git commit -m "[skip ci]: update image tag to ${NEXT_TAG}" &&
-      git remote set-url origin https://gitlab-ci-token:${PAT_TOKEN}@gitlab.com/testing382203/intern.git &&
-      git push origin "$CI_COMMIT_REF_NAME"
+    - NEXT_TAG=$($CI_COMMIT_TAG) 
+    - echo Next tag = $NEXT_TAG 
+    # - sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml 
+    # - sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml
+    # - "sed -i -E \"s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|\" deployment/dev/dev-deployment.yml"
+    - yq -i '.spec.template.spec.containers[] |= (select(.image | test("registry.gitlab.com/testing382203/intern:")) | .image = "registry.gitlab.com/testing382203/intern:'"${NEXT_TAG}"'")' deployment/dev/dev-deployment.yml
+    - git add deployment/dev/dev-deployment.yml 
+    - git commit -m "[skip ci] update image tag to ${NEXT_TAG}" 
+    - git remote set-url origin https://gitlab-ci-token:${PAT_TOKEN}@gitlab.com/testing382203/intern.git 
+    - git push origin "$CI_COMMIT_REF_NAME"
   rules:
   - if: $CI_COMMIT_TAG =~ /^dev-v\d+\.\d+\.\d+$/
   tags:
