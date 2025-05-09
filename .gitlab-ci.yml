@@ -133,7 +133,7 @@ dev-deployment:
   before_script:
     - git remote set-url origin https://$GIT_USER:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
     - git fetch origin deployment
-    - git checkout deployment
+    - git checkout deployment --
     - git pull --no-rebase origin deployment
     - git branch
   script:
