@@ -129,6 +129,7 @@ dev-deployment:
   dependencies:
     - build-job-non-prod
   before_script:
+    - git remote set-url origin https://$GITLAB_USERNAME:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
     - git checkout deployment
   script:
     # - NEXT_TAG=$($CI_COMMIT_TAG) 
@@ -137,7 +138,6 @@ dev-deployment:
     # - sed -i -E "s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|" deployment/dev/dev-deployment.yml
     # - "sed -i -E \"s|(image: registry.gitlab.com/testing382203/intern:).*|\1${NEXT_TAG}|\" deployment/dev/dev-deployment.yml"
     - yq -i -y '.spec.template.spec.containers[] |= (select(.image | test("registry.gitlab.com/testing382203/intern:")) | .image = "registry.gitlab.com/testing382203/intern:'"$CI_COMMIT_TAG"'")' deployment/dev/dev-deployment.yml
-    - git remote set-url origin https://$GITLAB_USERNAME:$PAT_TOKEN@gitlab.com/testing382203/intern.git 
     - git add deployment/dev/dev-deployment.yml 
     - git commit -m "[skip ci] update image tag to $CI_COMMIT_TAG" 
     - git push origin deployment
