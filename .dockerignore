@@ -1,0 +1,14 @@
+.env
+docker-compose.yml
+*.tf*
+deployment/
+README.md
+test/
+.dockerignore
+.gitignore
+coverage/
+.terraform/
+config/
+node_modules/
+.gitlab-ci.yml
+.terraform.lock.hcl
