@@ -1,140 +1,113 @@
+
 # 🚀 GitLab CI/CD Pipeline for Intern Project
 
-This repository contains a GitLab CI/CD pipeline configured to handle:
+This repository is equipped with a GitLab CI/CD pipeline that automates the full software lifecycle, from testing and code analysis to Docker image management and Kubernetes deployment.
+
+---
+
+## 📋 CI/CD Stages Overview
 
 1. **Unit Testing**
-2. **SonarQube Connection Testing**
-3. **Code Quality Scanning with SonarQube**
-4. **Docker Image Build & Push**
-5. **Container Vulnerability Scanning with Trivy**
-
-> ✅ The pipeline is triggered using **conventional commit messages** (e.g., `feat:`, `fix:`, `refactor:`, etc.) and optimized to run different jobs based on **branch names and commit types**.
+2. **Code Quality Scanning with SonarQube**
+3. **Docker Image Build for Dev and Prod**
+4. **Container Image Vulnerability Scanning**
+5. **Kubernetes Deployment for Dev and Prod**
 
 ---
 
-## Requirements
+## 📦 Requirements
 
-1. **GitLab**
-2. **DOcker Desktop**
-3. **Trivy**
-4. **SonarQube**
+Make sure the following tools and services are set up:
 
----
-
-## 🛠️ Pipeline Stages Overview
-
-### 🔍 1. Test Code (`test-code`)
-Runs unit tests using Node.js.
-
-- **Image**: `node:lts-alpine`
-- **Trigger**: On `dev` or `main` branch when using valid conventional commits
-- **Script**:
-  - Install dependencies (`npm ci`)
-  - Run tests (`npm run test:ci`)
-- **Artifacts**: Outputs `junit.xml` for test reporting
+- [x] GitLab (with CI/CD enabled)
+- [x] GitLab Runner (tagged: `VM_Runner`)
+- [x] Docker + Docker-in-Docker (`dind`)
+- [x] [Trivy](https://github.com/aquasecurity/trivy)
+- [x] [SonarQube](https://www.sonarqube.org/)
+- [x] Kubernetes cluster (Dev and Prod environments)
 
 ---
 
-### 🌐 2. Test SonarQube Connection (`test-sonar`)
-Tests the connectivity between the GitLab runner and the SonarQube server.
+## 🧪 Stage: Unit Test
 
-- **Image**: `alpine`
-- **Trigger**: Only when the commit message starts with `test: sonar`
-- **Setup**:
-  - Run SonarQube locally with:  
-    ```bash
-    docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
-    ```
-  - Access the UI via `http://localhost:9000`
-  - Login using default credentials `admin` / `admin`
-  - Generate a new token
-  - Set `$SONAR_HOST_URL` and `$SONAR_TOKEN` in GitLab CI/CD Variables
-- **Script**:
-  - Use `curl` to ping the SonarQube server
+**Job**: `test-job`  
+**Purpose**: Run unit tests using Node.js  
+**Image**: `node:lts-alpine`  
+**Trigger**: On commits to the `dev` branch  
+**Outputs**: JUnit test report (`coverage/junit.xml`)  
+**Runner Tag**: `VM_Runner`
 
 ---
 
-### 🧹 3. SonarQube Scan (`sonar`)
-Performs static code analysis using SonarQube and enforces quality gates.
+## 🔍 Stage: SonarQube Scan
 
-- **Image**: `sonarsource/sonar-scanner-cli:11`
-- **Trigger**: Only on `main` branch with relevant commit types (e.g., `feat:`, `fix:`, `refactor:`)
-- **Script**:
-  - Scan the source code
-  - Wait for quality gate results before proceeding
-- **Versioning**: Uses the short SHA as the project version (`sonar.projectVersion`)
-
----
-
-### 🐳 4. Build Docker Image (`build`)
-Builds and pushes a Docker image tagged with the commit SHA.
-
-- **Image**: `docker:24.0.5` with `docker:dind`
-- **Trigger**: On `dev` and `main` branches with conventional commits
-- **Script**:
-  - Authenticate with GitLab Registry
-  - Build and push the Docker image
+**Job**: `sonarscanner-job`  
+**Purpose**: Perform static code analysis  
+**Image**: `sonarsource/sonar-scanner-cli:11`  
+**Trigger**: On merge requests targeting `main`  
+**Key Features**:
+- Quality gate enforcement
+- Caches analysis results
+- Uses short SHA for versioning
 
 ---
 
-### 🛡️ 5. Image Scanning (`scan`)
-Uses [Trivy](https://github.com/aquasecurity/trivy) to scan the Docker image for vulnerabilities.
+## 🛠️ Stage: Docker Build (Non-Production)
 
-- **Image**: `aquasec/trivy:latest`
-- **Trigger**: On `main` and `dev` branches with valid commit types
-- **Script**:
-  - Download latest vulnerability DB
-  - Generate scan report
-  - Fail the pipeline if critical vulnerabilities are found
-
----
-
-## 🧪 Quality Gate Enforcement
-
-The **SonarQube scan** waits for a quality gate decision before proceeding. This ensures:
-
-- Code meets quality standards
-- No new bugs, code smells, or vulnerabilities are introduced
+**Job**: `build-job-non-prod`  
+**Purpose**: Build and push Docker image for development  
+**Image**: `docker:24.0.5` using `docker:dind`  
+**Trigger**: On tags matching `dev-v*.*.*`  
+**Image Tag**: `$CI_COMMIT_TAG`  
+**Runner Tag**: `VM_Runner`
 
 ---
 
-## 🎯 Branch Strategy
+## 🏗️ Stage: Docker Build (Production)
 
-| Branch | Behavior                                |
-|--------|-----------------------------------------|
-| `main` | Runs full pipeline including SonarQube  |
-| `dev`  | Skips SonarQube analysis for speed      |
-
----
-
-## ✅ Conventional Commit Examples
-
-| Type       | Description                          | Example                                  |
-|------------|--------------------------------------|------------------------------------------|
-| `feat:`    | New feature                          | `feat(api): add endpoint for login`      |
-| `fix:`     | Bug fix                              | `fix(ui): correct login form validation` |
-| `refactor:`| Code restructure                     | `refactor(core): optimize loop logic`    |
-| `perf:`    | Performance improvements             | `perf(api): improve response time`       |
-| `build:`   | CI/CD, packaging-related changes     | `build(ci): update Docker build logic`   |
-
-> 💡 Only these types will trigger the pipeline.
+**Job**: `build-job-prd`  
+**Purpose**: Build and push production Docker image  
+**Trigger**: On tags matching `prd-v*.*.*`  
+**Other config same as non-prod build**
 
 ---
 
-## 🏷️ Runner Tag
+## 🛡️ Stage: Image Vulnerability Scanning
 
-All jobs use the runner tag: `Project_Runner`  
-Make sure your GitLab Runner is configured with this tag.
+**Job**: `image_scan`  
+**Tool**: [Trivy](https://github.com/aquasecurity/trivy)  
+**Image**: `aquasec/trivy:latest`  
+**Trigger**: On tags matching `prd-v*.*.*`  
+**Checks**:
+- Generates a full vulnerability report (`gl-container-scanning-report.json`)
+- Fails pipeline on **CRITICAL** vulnerabilities
+
+---
+
+## 🚀 Stage: Dev Deployment
+
+**Job**: `dev-deployment`  
+**Purpose**: Update Kubernetes YAML with new Docker tag and push to `deployment` branch  
+**Trigger**: On tags matching `dev-v*.*.*`  
+**Files Updated**: `deployment/dev/dev-deployment.yml`  
+**Runner Tag**: `VM_Runner`
 
 ---
 
-## 🔐 Required CI/CD Environment Variables
+## 🚀 Stage: Production Deployment
 
-Add these to your GitLab project settings under **CI/CD > Variables**:
-
-- `GITLAB_USERNAME`
-- `PAT_TOKEN`
-- `SONAR_HOST_URL`
-- `SONAR_TOKEN`
+**Job**: `prod-deployment`  
+**Purpose**: Update Kubernetes deployment for production  
+**Trigger**: On tags matching `prd-v*.*.*`  
+**Depends On**: `image_scan`  
+**Files Updated**: `deployment/prod/prod-deployment.yml`  
+**Runner Tag**: `VM_Runner`
 
 ---
+
+## 🏷️ GitLab Runner Tag
+
+All jobs require the GitLab Runner to be tagged with:
+
+```text
+VM_Runner
